@@ -87,6 +87,7 @@ async function run() {
         app.put('/order', verifyJWT, async (req, res) => {
             const order = req.body
             const filter = { toolId: order.toolId }
+            const query = { _id: ObjectId(order.toolId) }
             const exist = await orderCollection.findOne(filter)
             const options = { upsert: true };
             if (exist) {
@@ -98,11 +99,25 @@ async function run() {
                         price: exist.price + order.price
                     }
                 }
+                const tool = await toolCollection.findOne(query)
+                const updateTool = {
+                    $set: {
+                        quantity: tool.quantity - order.quantity
+                    }
+                }
+                const updatedTool = await toolCollection.updateOne(query, updateTool, options)
                 const updatedOrder = await orderCollection.updateOne(filter, updatedDoc, options)
-                return res.send(updatedOrder)
+                return res.send({ updatedOrder, updatedTool })
             }
+            const tool = await toolCollection.findOne(query)
+            const updateTool = {
+                $set: {
+                    quantity: tool.quantity - order.quantity
+                }
+            }
+            const updatedTool = await toolCollection.updateOne(query, updateTool, options)
             const result = await orderCollection.insertOne(order)
-            res.send(result)
+            res.send({ result, updatedTool })
         })
 
         // user ordered api
@@ -110,6 +125,7 @@ async function run() {
             const email = req.query.email
             const authorization = req.headers.authorization
             const decodedEmail = req.decoded.email
+            console.log(decodedEmail);
             if (email === decodedEmail) {
                 const query = { email: email }
                 const orders = await orderCollection.find(query).toArray()
