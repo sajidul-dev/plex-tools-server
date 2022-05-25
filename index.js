@@ -5,6 +5,7 @@ const port = process.env.PORT || 5000
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { use } = require('express/lib/router');
 
 app.use(cors())
 app.use(express.json())
@@ -61,6 +62,34 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, options)
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
             res.send({ result, token })
+        })
+
+        // update user
+        app.put('/updateduser', verifyJWT, async (req, res) => {
+            const email = req.query.email
+            const updatedUser = req.body
+            const filter = { email: email }
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    name: updatedUser.name,
+                    img: updatedUser.img,
+                    phone: updatedUser.phone,
+                    education: updatedUser.education,
+                    address: updatedUser.address,
+                    linkedin: updatedUser.linkedin
+                },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options)
+            res.send(result)
+        })
+        //
+        app.get('/user', async (req, res) => {
+            const email = req.query.email
+            console.log(email);
+            const query = { email: email }
+            const result = await userCollection.findOne(query)
+            res.send(result)
         })
         // Get Six items
         app.get('/tools', async (req, res) => {
@@ -125,7 +154,6 @@ async function run() {
             const email = req.query.email
             const authorization = req.headers.authorization
             const decodedEmail = req.decoded.email
-            console.log(decodedEmail);
             if (email === decodedEmail) {
                 const query = { email: email }
                 const orders = await orderCollection.find(query).toArray()
@@ -145,7 +173,7 @@ async function run() {
 
         // get dummy reviews when user isn't log in
         app.get('/reviews', async (req, res) => {
-            const reviews = await reviewCollection.find().limit(3).toArray()
+            const reviews = await reviewCollection.find().toArray()
             res.send(reviews)
         })
     }
