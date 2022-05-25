@@ -35,11 +35,21 @@ async function run() {
         const toolCollection = client.db('plex_tools').collection('tools')
         const orderCollection = client.db('plex_tools').collection('orders')
         const userCollection = client.db('plex_tools').collection('users')
+        const reviewCollection = client.db('plex_tools').collection('reviews')
+
+        // const verifyAdmin = async (req, res, next) => {
+        //     const requester = req.decoded.email
+        //     const requesterAccount = await userCollection.findOne({ email: requester })
+        //     if (requesterAccount.role === 'admin') {
+        //         next()
+        //     }
+        //     else {
+        //         res.status(403).send({ message: "forbidden" })
+        //     }
+        // }
 
 
-
-
-
+        // put user to db
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email
             const user = req.body
@@ -74,7 +84,7 @@ async function run() {
         })
 
         // put order in orders collection
-        app.put('/order', async (req, res) => {
+        app.put('/order', verifyJWT, async (req, res) => {
             const order = req.body
             const filter = { toolId: order.toolId }
             const exist = await orderCollection.findOne(filter)
@@ -82,14 +92,45 @@ async function run() {
             if (exist) {
                 const updatedDoc = {
                     $set: {
-                        quantity: exist.quantity + order.quantity
+                        address: order.address,
+                        phone: order.phone,
+                        quantity: exist.quantity + order.quantity,
+                        price: exist.price + order.price
                     }
                 }
                 const updatedOrder = await orderCollection.updateOne(filter, updatedDoc, options)
-                res.send(updatedOrder)
+                return res.send(updatedOrder)
             }
             const result = await orderCollection.insertOne(order)
             res.send(result)
+        })
+
+        // user ordered api
+        app.get('/myorder', verifyJWT, async (req, res) => {
+            const email = req.query.email
+            const authorization = req.headers.authorization
+            const decodedEmail = req.decoded.email
+            if (email === decodedEmail) {
+                const query = { email: email }
+                const orders = await orderCollection.find(query).toArray()
+                res.send(orders)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+        })
+
+        // add review
+        app.put('/addreview', async (req, res) => {
+            const review = req.body
+            const result = await reviewCollection.insertOne(review)
+            res.send(result)
+        })
+
+        // get dummy reviews when user isn't log in
+        app.get('/reviews', async (req, res) => {
+            const reviews = await reviewCollection.find().limit(3).toArray()
+            res.send(reviews)
         })
     }
     finally {
