@@ -200,6 +200,18 @@ async function run() {
                 res.status(403).send({ message: 'forbidden access' })
             }
         })
+        app.get('/allorders', verifyJWT, verifyAdmin, async (req, res) => {
+            const result = await orderCollection.find().toArray()
+            res.send(result)
+        })
+
+        // add a new product by admin
+
+        app.post('/addproduct', verifyJWT, verifyAdmin, async (req, res) => {
+            const tool = req.body
+            const result = await toolCollection.insertOne(tool)
+            res.send(result)
+        })
 
         // add review
         app.put('/addreview', async (req, res) => {
