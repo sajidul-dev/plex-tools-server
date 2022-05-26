@@ -38,6 +38,7 @@ async function run() {
         const orderCollection = client.db('plex_tools').collection('orders')
         const userCollection = client.db('plex_tools').collection('users')
         const reviewCollection = client.db('plex_tools').collection('reviews')
+        const paymentCollection = client.db('plex_tools').collection('payments')
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email
@@ -216,6 +217,22 @@ async function run() {
         app.get('/allorders', verifyJWT, verifyAdmin, async (req, res) => {
             const result = await orderCollection.find().toArray()
             res.send(result)
+        })
+
+        // Patch for update payment status
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id
+            const payment = req.body
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId,
+                }
+            }
+            const result = await paymentCollection.insertOne(payment)
+            const updatedBooking = await orderCollection.updateOne(filter, updatedDoc)
+            res.send(updatedDoc)
         })
 
         // add a new product by admin
