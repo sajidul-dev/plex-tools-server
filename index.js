@@ -69,6 +69,13 @@ async function run() {
             res.send({ admin: isAdmin })
         })
 
+        app.delete('/deleteuser/:email', verifyJWT, verifyAdmin, async (req, res) => {
+            const email = req.params.email
+            const query = { email: email }
+            const result = await userCollection.deleteOne(query)
+            res.send(result)
+        })
+
         // Load all user
         app.get('/alluser', verifyJWT, async (req, res) => {
             const query = {}
@@ -139,7 +146,10 @@ async function run() {
         // put order in orders collection
         app.put('/order', verifyJWT, async (req, res) => {
             const order = req.body
-            const filter = { toolId: order.toolId }
+            const filter = {
+                email: order.email,
+                toolId: order.toolId
+            }
             const query = { _id: ObjectId(order.toolId) }
             const exist = await orderCollection.findOne(filter)
             const options = { upsert: true };
