@@ -213,6 +213,15 @@ async function run() {
             res.send(result)
         })
 
+        // delete tool
+        app.delete('/deletetool/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const result = await toolCollection.deleteOne(query)
+            res.send(result)
+
+        })
+
         // add review
         app.put('/addreview', async (req, res) => {
             const review = req.body
