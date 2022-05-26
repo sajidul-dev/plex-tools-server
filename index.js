@@ -222,11 +222,35 @@ async function run() {
 
         })
 
+        app.get('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const result = await orderCollection.findOne(query)
+            res.send(result)
+        })
+
         // add review
         app.put('/addreview', async (req, res) => {
             const review = req.body
-            const result = await reviewCollection.insertOne(review)
-            res.send(result)
+            const query = { email: review.email }
+            const options = { upsert: true };
+            const user = await userCollection.findOne(query)
+            console.log(user.img);
+            if (user.img) {
+                const updateDoc = {
+                    $set: {
+                        img: user.img,
+                    }
+                }
+                const updatedUserReview = await reviewCollection.updateOne(query, updateDoc, options)
+                const result = await reviewCollection.insertOne(review)
+                return res.send({ result, updatedUserReview })
+            }
+            else {
+                const result = await reviewCollection.insertOne(review)
+                res.send(result)
+            }
+
         })
 
         // get dummy reviews when user isn't log in
