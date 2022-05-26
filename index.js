@@ -5,7 +5,8 @@ const port = process.env.PORT || 5000
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const { use } = require('express/lib/router');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
 
 app.use(cors())
 app.use(express.json())
@@ -49,6 +50,18 @@ async function run() {
             }
         }
 
+        // Paymet api
+        app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+            const tool = req.body;
+            const price = tool.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        })
 
         // make admin
         app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
