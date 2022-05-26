@@ -5,6 +5,7 @@ const port = process.env.PORT || 5000
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const verify = require('jsonwebtoken/verify');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 
@@ -233,6 +234,19 @@ async function run() {
             const result = await paymentCollection.insertOne(payment)
             const updatedBooking = await orderCollection.updateOne(filter, updatedDoc)
             res.send(updatedDoc)
+        })
+
+        // Handle shift status by admin
+        app.patch('/shifted/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    shifted: true
+                }
+            }
+            const result = await orderCollection.updateOne(filter, updateDoc)
+            res.send(result)
         })
 
         // add a new product by admin
