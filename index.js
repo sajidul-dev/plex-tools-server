@@ -9,7 +9,7 @@ const verify = require('jsonwebtoken/verify');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 
-app.use(cors())
+app.use(cors({ origin: "https://manufacturer-app-ea238.web.app" }))
 app.use(express.json())
 
 
