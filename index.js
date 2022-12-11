@@ -24,7 +24,6 @@ app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept,authorization")
     next()
 })
-// app.use(express.json())
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.l9moh.mongodb.net/?retryWrites=true&w=majority`;
@@ -202,6 +201,7 @@ async function run() {
                 return res.send({ updatedOrder, updatedTool })
             }
 
+
             else {
                 const tool = await toolCollection.findOne(query)
                 const updateTool = {
@@ -235,9 +235,10 @@ async function run() {
         })
 
         // Patch for update payment status
-        app.patch('/order/:id', verifyJWT, async (req, res) => {
+        app.put('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id
             const payment = req.body
+            // console.log(payment)
             const filter = { _id: ObjectId(id) }
             const updatedDoc = {
                 $set: {
@@ -247,6 +248,7 @@ async function run() {
             }
             const result = await paymentCollection.insertOne(payment)
             const updatedBooking = await orderCollection.updateOne(filter, updatedDoc)
+            console.log(updatedBooking);
             res.send(updatedDoc)
         })
 
